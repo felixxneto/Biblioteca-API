@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+// Aqui ficam todas as regras de negócio do sistema
+// Qualquer lógica que não seja só buscar ou salvar dados, passa por aqui
 @Service
 public class BibliotecaService {
 
@@ -29,6 +31,7 @@ public class BibliotecaService {
     }
 
     public Livro buscarLivroPorId(Long id) {
+        // orElseThrow evita retornar null — se não achar, já lança o erro
         return livroRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Livro nao encontrado: " + id));
     }
@@ -42,6 +45,7 @@ public class BibliotecaService {
     }
 
     public Livro salvarLivro(Livro livro) {
+        // ISBN é único — não faz sentido cadastrar o mesmo livro duas vezes
         if (livroRepository.findByIsbn(livro.getIsbn()).isPresent()) {
             throw new RuntimeException("Ja existe um livro com esse ISBN");
         }
@@ -67,6 +71,7 @@ public class BibliotecaService {
     }
 
     public Usuario salvarUsuario(Usuario usuario) {
+        // Não deixo cadastrar dois usuários com o mesmo email
         if (usuarioRepository.existsByEmail(usuario.getEmail())) {
             throw new RuntimeException("Ja existe um usuario com esse email");
         }
@@ -79,10 +84,12 @@ public class BibliotecaService {
         Usuario usuario = buscarUsuarioPorId(usuarioId);
         Livro livro = buscarLivroPorId(livroId);
 
+        // Só empresta se o livro estiver disponível
         if (!livro.isDisponivel()) {
             throw new RuntimeException("Livro indisponivel para emprestimo");
         }
 
+        // Marca como indisponível e registra no usuário
         livro.setDisponivel(false);
         livroRepository.save(livro);
         usuario.emprestarLivro(livro);
@@ -93,6 +100,7 @@ public class BibliotecaService {
         Usuario usuario = buscarUsuarioPorId(usuarioId);
         Livro livro = buscarLivroPorId(livroId);
 
+        // Devolução: livro volta a ficar disponível e sai da lista do usuário
         livro.setDisponivel(true);
         livroRepository.save(livro);
         usuario.devolverLivro(livro);
